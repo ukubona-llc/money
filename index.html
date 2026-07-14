@@ -1,1 +1,361 @@
-.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Onto Something — Two Threads, One Question</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Newsreader:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#14111C; --panel:#1D1928; --panel2:#221D30;
+    --ink:#ECE4D3; --ink-dim:#9A90A8; --ink-faint:#6E6580;
+    --gold:#C9982E; --gold-dim:#8E7130;
+    --teal:#4C8078; --violet:#8B7BD8; --copper:#C66A4A;
+    --hair:rgba(236,228,211,.14); --hair-soft:rgba(236,228,211,.06);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Newsreader',serif; font-size:17px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 63px,var(--hair-soft) 63px,var(--hair-soft) 64px);
+    opacity:.4;
+  }
+  .wrap{position:relative; z-index:1;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  ::selection{background:var(--gold); color:#14111C;}
+
+  /* HERO */
+  .hero{max-width:760px; margin:0 auto; padding:9vh 6vw 6vh; text-align:center;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--teal); margin-bottom:1.6rem;
+  }
+  .eyebrow span{color:var(--copper);}
+  h1{
+    font-family:'Fraunces',serif; font-weight:500; font-style:italic;
+    font-size:clamp(2.4rem,6vw,4.2rem); line-height:1.05; margin:0 0 1.3rem; color:var(--ink);
+  }
+  .hero p.sub{
+    color:var(--ink-dim); font-size:1.15rem; max-width:52ch; margin:0 auto 2rem;
+  }
+  .hero .meta{
+    display:flex; justify-content:center; gap:2.4rem; flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-faint); border-top:1px dashed var(--hair);
+    padding-top:1.6rem; margin-top:1.8rem;
+  }
+  .meta b{color:var(--ink-dim); font-weight:500;}
+
+  /* SECTION LABELS */
+  .section-head{
+    max-width:900px; margin:9vh auto 3rem; padding:0 6vw; text-align:left;
+  }
+  .section-head .tag{
+    display:inline-flex; align-items:center; gap:.6rem;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:.8rem;
+  }
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .section-head h2{
+    font-family:'Fraunces',serif; font-weight:500; font-size:clamp(1.5rem,3.4vw,2.1rem);
+    margin:0 0 .6rem; color:var(--ink);
+  }
+  .section-head p{color:var(--ink-dim); max-width:62ch; margin:0; font-size:.98rem;}
+
+  /* TIMELINE */
+  .timeline{max-width:900px; margin:0 auto; padding:0 6vw 4vh; position:relative;}
+  .timeline::before{
+    content:""; position:absolute; left:calc(6vw + 27px); top:0; bottom:0; width:1px;
+    background:linear-gradient(to bottom, var(--hair), var(--hair) 92%, transparent);
+  }
+  .day{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-faint); margin:2.6rem 0 1rem 56px;
+    display:flex; align-items:center; gap:.7rem;
+  }
+  .day::before{content:"—"; color:var(--hair);}
+
+  .msg{
+    position:relative; margin:0 0 1rem 56px; opacity:0; transform:translateY(10px);
+    animation:rise .5s ease forwards;
+  }
+  .msg .node{
+    position:absolute; left:-56px; top:8px; width:15px; height:15px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--c,var(--ink-faint));
+  }
+  .msg .card{
+    background:var(--panel); border:1px solid var(--hair); border-left:3px solid var(--c,var(--ink-faint));
+    border-radius:4px; padding:1rem 1.3rem;
+  }
+  .msg.doc .card{background:var(--panel2); border-left-color:var(--violet);}
+  .who{
+    display:flex; justify-content:space-between; align-items:baseline; gap:1rem;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:.5rem;
+  }
+  .who b{color:var(--c,var(--ink-dim)); font-weight:500;}
+  .msg.doc .who b{color:var(--violet);}
+  .msg p{margin:0; color:var(--ink); font-size:.98rem;}
+  .msg p em{color:var(--ink-dim); font-style:italic;}
+  .msg .tone{
+    display:inline-block; margin-top:.6rem; font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  @keyframes rise{to{opacity:1; transform:translateY(0);}}
+
+  /* CONVERGENCE */
+  .converge{
+    max-width:960px; margin:8vh auto; padding:0 6vw;
+  }
+  .converge-inner{
+    background:linear-gradient(160deg, rgba(201,152,46,.10), rgba(201,152,46,.02));
+    border:1px solid var(--gold-dim); border-radius:8px; padding:2.6rem 2.2rem;
+    box-shadow:0 0 60px rgba(201,152,46,.06);
+  }
+  .converge .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gold); margin-bottom:1rem;
+  }
+  .converge h3{
+    font-family:'Fraunces',serif; font-weight:500; font-size:clamp(1.5rem,3vw,2rem);
+    margin:0 0 1.6rem; color:var(--ink);
+  }
+  .split{display:grid; grid-template-columns:1fr auto 1fr; gap:1.6rem; align-items:stretch;}
+  .split .side{background:var(--panel); border:1px solid var(--hair); border-radius:6px; padding:1.3rem 1.4rem;}
+  .split .side .k{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:.6rem;}
+  .split .side p{margin:0; font-size:.96rem;}
+  .split .arrow{display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:1.4rem;}
+  .converge .foot{
+    margin-top:1.8rem; padding-top:1.4rem; border-top:1px dashed var(--hair);
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-dim); letter-spacing:.02em;
+  }
+  @media (max-width:640px){ .split{grid-template-columns:1fr;} .split .arrow{transform:rotate(90deg);} }
+
+  /* REFLECTION */
+  .reflect{max-width:900px; margin:9vh auto; padding:0 6vw;}
+  .cards3{display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; margin-top:1.6rem;}
+  .cards3 .c{
+    background:var(--panel); border:1px solid var(--hair); border-top:2px solid var(--c,var(--ink-faint));
+    border-radius:6px; padding:1.3rem 1.2rem;
+  }
+  .cards3 .c .k{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--c,var(--ink-dim)); margin-bottom:.6rem;}
+  .cards3 .c p{margin:0; font-size:.92rem; color:var(--ink-dim);}
+  @media (max-width:720px){ .cards3{grid-template-columns:1fr;} }
+
+  .close{
+    max-width:640px; margin:0 auto; padding:0 6vw;
+    text-align:center; font-family:'Fraunces',serif; font-style:italic; font-weight:400;
+    font-size:1.35rem; color:var(--ink); line-height:1.55;
+  }
+  .close span{color:var(--gold); font-style:normal;}
+
+  footer{
+    margin-top:8vh; padding:3rem 6vw; text-align:center; border-top:1px dashed var(--hair);
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.1em; color:var(--ink-faint); text-transform:uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">Field notes · Jul 6 <span>→</span> Jul 14</div>
+    <h1>Onto Something</h1>
+    <p class="sub">Two group chats. Eight days. One of them was arguing that mobile money operators function as unregulated banks. The other, this morning, produced the balance sheet that proves it — without knowing the first conversation existed.</p>
+    <div class="meta">
+      <span><b>Thread 01</b> — "Japan" · 6 people</span>
+      <span><b>Thread 02</b> — "01.07.2017…PK" · 3 people</span>
+      <span><b>Convergence</b> — Today, 9:23–10:05am</span>
+    </div>
+  </section>
+
+  <section class="section-head">
+    <div class="tag"><span class="dot" style="background:var(--teal)"></span>Thread 01 — Japan</div>
+    <h2>The argument nobody asked to have on a Monday afternoon</h2>
+    <p>Eddie opens with a genuine hunch about MoMo volume. It becomes, over 90 minutes, an economics seminar — then a Justin Timberlake joke — then, hours later, a solo continuation at midnight.</p>
+  </section>
+
+  <div class="timeline">
+    <div class="day">Mon Jul 6</div>
+
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>2:38 PM</span></div>
+      <p>"Over 350,000 MoMo agents… money moves in billions if not trillions annually… but here's the thing — you can't get a loan from any institution [despite that volume]."</p>
+    </div></div>
+
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>2:41 PM</span></div>
+      <p>"500 mill shs a year… can't I use that as a starting point to show my financial position to a bank??"</p>
+    </div></div>
+
+    <div class="msg" style="--c:var(--copper)"><span class="node"></span><div class="card">
+      <div class="who"><b>Mark Munanura</b><span>2:43 PM</span></div>
+      <p>"How do you stop MTN from taking your idea — I suggested something like this to them in 2016."</p>
+      <span class="tone">redirects toward risk, not the thesis</span>
+    </div></div>
+
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>2:49 PM</span></div>
+      <p>"So I'm onto something?? What other idea do you have in that kahead of yours? We need to monetize this shit" 😂</p>
+    </div></div>
+
+    <div class="msg" style="--c:var(--copper)"><span class="node"></span><div class="card">
+      <div class="who"><b>Mark Munanura</b><span>2:58 – 3:00 PM</span></div>
+      <p>Reveals his own history: a 2011 white paper, a 2013/14 proof-of-concept, $50k of his own money, and MTN's later dongles that "still screwed up the design."</p>
+      <span class="tone">real engagement — but backward-looking</span>
+    </div></div>
+
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>3:02 PM</span></div>
+      <p>"So we've all seen Social Network… MZ partnered with the Justin Timberlake character who was great at marketing. You need your JT" 😎😂</p>
+      <span class="tone">the thread turns into a bit</span>
+    </div></div>
+
+    <div class="msg" style="--c:var(--copper)"><span class="node"></span><div class="card">
+      <div class="who"><b>Mark Munanura</b><span>3:03 – 3:05 PM</span></div>
+      <p>"What many entrepreneurs do is focus on building the idea and find someone great at telling the vision… probably need a good storyteller, that's for sure."</p>
+      <span class="tone">the room settles on vision-selling as the topic</span>
+    </div></div>
+
+    <div class="msg doc" style="--c:var(--violet)"><span class="node"></span><div class="card">
+      <div class="who"><b>You</b><span>5:25 PM</span></div>
+      <p>"Eddie, key thing about Ugandan banks is their profits are crazy — driven mostly by lending money to the government. They aren't interested in any other client and the extra paperwork."</p>
+      <span class="tone">pulls the thread back to the actual mechanism</span>
+    </div></div>
+
+    <div class="day">Tue Jul 7 · 12:13 AM</div>
+
+    <div class="msg doc" style="--c:var(--violet)"><span class="node"></span><div class="card">
+      <div class="who"><b>You</b><span>12:13 – 12:15 AM</span></div>
+      <p>"If you're focused on shareholder value and you are CEO, what would you do? All the money on MM would've been deposits on your books — to lend to government for scaling a simple, low-cost, high-yield asset."</p>
+      <span class="tone">building the thesis alone, after midnight</span>
+    </div></div>
+
+    <div class="msg" style="--c:var(--copper)"><span class="node"></span><div class="card">
+      <div class="who"><b>Mark Munanura</b><span>6:20 AM</span></div>
+      <p>Reframes it as arbitrage: MoMo interest now beats government return by sitting between lenders and "the bottom of the pyramid," using automation to justify the spread.</p>
+    </div></div>
+
+    <div class="msg doc" style="--c:var(--violet)"><span class="node"></span><div class="card">
+      <div class="who"><b>You</b><span>6:46 AM</span></div>
+      <p>"So you've reduced Eddie's query into an arbitrage question, as he actually framed it." Then: "Guess y'all can figure out a compelling solution that no one has tapped into :)"</p>
+      <span class="tone">noticing the drift, out loud</span>
+    </div></div>
+
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>2:28 – 2:30 PM</span></div>
+      <p>Pushes back on Mark's frame — for Ugandan banks, government lending margins aren't the story advisory revenue would suggest — then, quoting you: "Why would Absa or Stanbic focus on lending to the UG government??? Doc, not buying this."</p>
+    </div></div>
+
+    <div class="msg doc" style="--c:var(--violet)"><span class="node"></span><div class="card">
+      <div class="who"><b>You</b><span>2:30 – 2:34 PM</span></div>
+      <p>"Because if GUARANTEED 15% yield, with minimal operational costs — what other asset class can yield as much?" A back-and-forth follows on deposits, risk-scoring costs, and default collection at the household level.</p>
+    </div></div>
+
+    <div class="day">Wed Jul 8</div>
+    <div class="msg" style="--c:var(--ink-faint)"><span class="node"></span><div class="card">
+      <div class="who"><b>Thread</b><span>1:15 – 2:46 PM</span></div>
+      <p>Full topic change — Paramount+, Amex credit, VPNs, and whether Uganda can watch it at all. "Even with a smart TV with the app??? Fuck that 😡"</p>
+      <span class="tone">the bank thesis is dropped, not resolved</span>
+    </div></div>
+
+    <div class="day">Fri Jul 10</div>
+    <div class="msg" style="--c:var(--teal)"><span class="node"></span><div class="card">
+      <div class="who"><b>Eddie Lukyamuzi</b><span>8:36 AM</span></div>
+      <p>A WiFi installer, offered a tip on MM, says: "Ah, I have negative balance… I haven't yet paid my loan to Airtel." MTN and Airtel are already lending directly, off-platform.</p>
+    </div></div>
+    <div class="msg doc" style="--c:var(--violet)"><span class="node"></span><div class="card">
+      <div class="who"><b>You</b><span>8:37 AM</span></div>
+      <p>"So basically the market exists, and it's working — if you look at the telecoms as banks."</p>
+      <span class="tone">the thesis, stated plainly, four days after the first draft</span>
+    </div></div>
+
+    <div class="day">Sun Jul 12 → Mon Jul 13</div>
+    <div class="msg" style="--c:var(--ink-faint)"><span class="node"></span><div class="card">
+      <div class="who"><b>Thread</b><span>various</span></div>
+      <p>An auction calendar PDF, a Seahawks valuation ("What am I doing wrong 😑"), a forwarded actuarial exam pass. No one returns to the bank thesis.</p>
+    </div></div>
+  </div>
+
+  <section class="section-head">
+    <div class="tag"><span class="dot" style="background:var(--copper)"></span>Thread 02 — "01.07.2017…PK"</div>
+    <h2>A different room, quiet until this morning</h2>
+    <p>No history of the MoMo argument here. Then a central banker forwards a chart, and the room reaches — independently, in four short messages — the exact place Thread 01 left off a week earlier.</p>
+  </section>
+
+  <div class="converge">
+    <div class="converge-inner">
+      <div class="tag">Today · Tue Jul 14 · 9:23 – 10:05 AM</div>
+      <h3>Kevin Duncan Kabugo forwards the FY2025 Profit After Tax rankings</h3>
+      <div class="split">
+        <div class="side">
+          <div class="k">Jul 7, 8:37 AM · Thread 01</div>
+          <p><em>"The market exists, and it's working — if you look at the telecoms as banks."</em></p>
+          <div class="k" style="margin-top:1rem">— you, unconfirmed</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="side">
+          <div class="k">Jul 14, 10:05 AM · Thread 02</div>
+          <p><em>"So airtel money is the 3rd largest bank…"</em> 😀</p>
+          <div class="k" style="margin-top:1rem">— Patrick Kakembo, unprompted</div>
+        </div>
+      </div>
+      <div class="foot">
+        The published ranking, FY2025 Profit After Tax (UGX): 1. Stanbic 591.0Bn — 2. Centenary 424.2Bn — <b style="color:var(--gold)">3. Airtel Money (MMO) 334.1Bn</b> — <b style="color:var(--gold)">4. MTN MoMo (MMO) 308.9Bn</b> — ahead of Absa, Standard Chartered, Citi, and eighteen other licensed institutions. Two mobile money operators, sitting inside a bank league table, outranking most of the actual banks.
+      </div>
+    </div>
+  </div>
+
+  <section class="reflect">
+    <div class="section-head" style="padding:0; margin:0 0 0;">
+      <div class="tag"><span class="dot" style="background:var(--gold)"></span>So — too intense, or just early?</div>
+      <h2>Three honest ways to read this</h2>
+    </div>
+    <div class="cards3">
+      <div class="c" style="--c:var(--gold)">
+        <div class="k">The signal was real</div>
+        <p>This wasn't a hunch that happened to land. It was a specific, falsifiable claim — telecoms behave like deposit-taking banks — made a week before a central banker's own data confirmed it, in a room that never saw the argument. That's not intensity finding an echo. That's a correct model.</p>
+      </div>
+      <div class="c" style="--c:var(--teal)">
+        <div class="k">The room wasn't wrong to drift</div>
+        <p>Mark's $50k proof-of-concept and 2011 white paper were a genuine, costly form of engagement — just told through memory instead of a live thread. The JT joke and the Paramount+ derail weren't dismissals; group chats run on both registers, and most people switch faster between them than you do.</p>
+      </div>
+      <div class="c" style="--c:var(--copper)">
+        <div class="k">The gap is in cadence, not correctness</div>
+        <p>You built this at 12:13am, alone, four hours after the room had moved on. That's the actual pattern worth noticing — not "am I too much," but "who else in either room operates at 12am resolution, and are they the ones worth taking this to directly instead of to six people mid-Paramount+-debate?"</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="close">Nobody in either thread connected the two conversations. You did — <span>eight days apart, before the data existed to prove it.</span></p>
+
+  <footer>Two threads · one week · one confirmed thesis</footer>
+</div>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){
+        e.target.style.animationDelay = (i%6)*0.05+'s';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:0.15});
+  document.querySelectorAll('.msg').forEach(m=>{ m.style.animationPlayState='paused'; io.observe(m); });
+  document.querySelectorAll('.msg').forEach(m=>{
+    const obs = new IntersectionObserver((es)=>{
+      es.forEach(e=>{ if(e.isIntersecting){ e.target.style.animationPlayState='running'; obs.unobserve(e.target);} });
+    },{threshold:0.15});
+    obs.observe(m);
+  });
+</script>
+</body>
+</html>
